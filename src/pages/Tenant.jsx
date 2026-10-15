@@ -1,3 +1,4 @@
+import { Icon } from '../Icon.jsx'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../supabase.js'
@@ -5,13 +6,13 @@ import { Loading } from '../Loading.jsx'
 import DigiLockerModal from '../components/DigiLockerModal.jsx'
 import { sleep } from '../lib.js'
 
-const CONSENT_TEXT = `I agree that GharTrust and the landlord named above may collect and check my identity, PAN, employment and address details, and share my address with local police for tenant registration where required, to verify my tenancy application. I understand I can withdraw my consent at any time.`
+const CONSENT_TEXT = `I agree that GharTrust and the landlord named above may collect and check my identity, PAN, employment and address details, contact my employer's HR team to confirm my employment details, and share my address with local police for tenant registration where required, to verify my tenancy application. I understand I can withdraw my consent at any time.`
 const DOCS = [
-  { type: 'pan', icon: '🪪', label: 'PAN card', required: true, accept: 'image/*,application/pdf' },
-  { type: 'id_proof', icon: '📇', label: 'Aadhaar / ID proof', required: true, accept: 'image/*,application/pdf' },
-  { type: 'selfie', icon: '🤳', label: 'Selfie', required: true, accept: 'image/*', capture: 'user' },
-  { type: 'employment_doc', icon: '💼', label: 'Offer letter or recent payslip', required: true, accept: 'image/*,application/pdf' },
-  { type: 'bank_statement', icon: '🏦', label: 'Bank statement (optional)', required: false, accept: 'application/pdf' },
+  { type: 'pan', icon: 'card', label: 'PAN card', required: true, accept: 'image/*,application/pdf' },
+  { type: 'id_proof', icon: 'id', label: 'Aadhaar / ID proof', required: true, accept: 'image/*,application/pdf' },
+  { type: 'selfie', icon: 'camera', label: 'Selfie', required: true, accept: 'image/*', capture: 'user' },
+  { type: 'employment_doc', icon: 'briefcase', label: 'Offer letter or recent payslip', required: true, accept: 'image/*,application/pdf' },
+  { type: 'bank_statement', icon: 'bank', label: 'Bank statement (optional)', required: false, accept: 'application/pdf' },
 ]
 const STEPS = ['Consent', 'Identity', 'Work & address', 'Documents', 'Done']
 const CITIES = ['Bengaluru', 'Mumbai', 'Pune', 'Hyderabad', 'Delhi NCR', 'Chennai', 'Kolkata']
@@ -93,7 +94,7 @@ export default function Tenant() {
   if (info === undefined || (info && step === null)) return <Loading />
   if (info === null) return <main className="narrow"><div className="card"><h2>Link not active</h2><p className="muted">This link is invalid, expired or has been withdrawn.</p></div></main>
   if (!info.is_paid && step === 0) return (
-    <main className="narrow"><div className="card success"><div className="big">⏳</div><h3>Almost ready</h3>
+    <main className="narrow"><div className="card success"><div className="done-ico"><Icon name="clock" size={32} /></div><h3>Almost ready</h3>
       <p className="muted">Hi {info.tenant_name}, your landlord hasn't activated this verification yet. Please check back soon.</p></div></main>
   )
 
@@ -105,7 +106,7 @@ export default function Tenant() {
     <main className="narrow">
       <div className="card">
         <div className="logo">Ghar<span className="grad">Trust</span></div>
-        <h2 style={{ marginTop: 14 }}>Hi {info.tenant_name} 👋</h2>
+        <h2 style={{ marginTop: 14 }}>Hi {info.tenant_name}</h2>
         <p className="muted">{info.property_label ? `Verification for ${info.property_label}. ` : ''}About 5 minutes.</p>
 
         <div className="stepper" aria-label="Progress">
@@ -134,12 +135,12 @@ export default function Tenant() {
               <label>PAN number<input placeholder="ABCDE1234F" maxLength={10} value={f.pan_number || ''} onChange={(e) => { set('pan_number', e.target.value.toUpperCase()); setPan('idle') }} /></label>
               <label>Date of birth<input type="date" value={f.dob || ''} onChange={(e) => set('dob', e.target.value)} /></label>
             </div>
-            {pan === 'ok' ? <p className="note ok-note">✅ PAN received. Our team completes the final check with official records.</p>
+            {pan === 'ok' ? <p className="note ok-note"><Icon name="check" /><span>PAN received. Our team completes the final check with official records.</span></p>
               : <button className="btn alt" disabled={!!busy} onClick={verifyPan}>{pan === 'checking' ? 'Checking with records (demo)…' : 'Verify PAN'}</button>}
 
             <h3 style={{ marginTop: 24 }}>Aadhaar via DigiLocker</h3>
-            {f.digilocker_status === 'connected' ? <p className="note ok-note">✅ DigiLocker connected · Aadhaar ending {f.aadhaar_last4}</p>
-              : <button className="btn alt" onClick={() => setDl(true)}>🔗 Connect DigiLocker</button>}
+            {f.digilocker_status === 'connected' ? <p className="note ok-note"><Icon name="check" /><span>DigiLocker connected · Aadhaar ending {f.aadhaar_last4}</span></p>
+              : <button className="btn alt" onClick={() => setDl(true)}>Connect DigiLocker</button>}
             <button className="btn" style={{ width: '100%', marginTop: 22 }} disabled={!identityReady} onClick={() => setStep(2)}>Continue</button>
             {dl && <DigiLockerModal onClose={() => setDl(false)} onConnected={connected} />}
           </>
@@ -153,7 +154,8 @@ export default function Tenant() {
               <label>Designation *<input value={f.designation || ''} onChange={(e) => set('designation', e.target.value)} /></label>
               <label>Monthly income (₹) *<input inputMode="numeric" value={f.monthly_income ?? ''} onChange={(e) => set('monthly_income', e.target.value.replace(/[^\d.]/g, ''))} /></label>
             </div>
-            <label>HR / manager email (optional)<input type="email" value={f.hr_email || ''} onChange={(e) => set('hr_email', e.target.value)} /></label>
+            <label>HR email (recommended)<input placeholder="hr@yourcompany.com" type="email" value={f.hr_email || ''} onChange={(e) => set('hr_email', e.target.value)} /></label>
+            <p className="muted">Use your company HR email, not a personal one. We'll ask HR to confirm your job, role and income.</p>
             <h3 style={{ marginTop: 20 }}>Address & police verification</h3>
             <label>Current address *<input value={f.current_address || ''} onChange={(e) => set('current_address', e.target.value)} /></label>
             <label>Permanent address<input value={f.permanent_address || ''} onChange={(e) => set('permanent_address', e.target.value)} /></label>
@@ -170,7 +172,7 @@ export default function Tenant() {
             <div className="progress"><i style={{ width: `${(have / required.length) * 100}%` }} /></div>
             {DOCS.map((d) => (
               <label key={d.type} className={`tile ${done[d.type] ? 'done' : ''}`}>
-                <span className="ico">{done[d.type] ? '✅' : d.icon}</span>
+                <span className="ico">{done[d.type] ? <Icon name="check" /> : <Icon name={d.icon} />}</span>
                 <span>{d.label}{d.required && ' *'}
                   <small>{busy === d.type ? 'Uploading…' : done[d.type] || 'Tap to upload · JPG, PNG or PDF · max 5 MB'}</small></span>
                 <input type="file" accept={d.accept} capture={d.capture} disabled={busy === d.type} onChange={(e) => upload(d.type, e.target.files[0])} />
@@ -182,7 +184,7 @@ export default function Tenant() {
 
         {step === 4 && (
           <div className="success">
-            <div className="big">🎉</div><h3>All done!</h3>
+            <div className="done-ico"><Icon name="check" size={34} /></div><h3>All done!</h3>
             <p className="muted">Here's what happens next:</p>
             <ol className="next"><li>PAN and identity checks</li><li>Employment confirmation</li><li>Police verification (can take a few days)</li><li>Your landlord receives the report</li></ol>
           </div>

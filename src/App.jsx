@@ -5,6 +5,7 @@ import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import RequestDetail from './pages/RequestDetail.jsx'
 import Tenant from './pages/Tenant.jsx'
+import HrVerify from './pages/HrVerify.jsx'
 import Admin from './pages/Admin.jsx'
 import AdminReview from './pages/AdminReview.jsx'
 import { Loading } from './Loading.jsx'
@@ -49,8 +50,7 @@ export default function App() {
   const guard = (el) => (session ? el : <Navigate to="/login" replace />)
   return (
     <>
-      <div className="orbs"><i className="orb o1" /><i className="orb o2" /><i className="orb o3" /></div>
-      {session === undefined || (session && isAdmin === null) ? <Loading /> : (
+            {session === undefined || (session && isAdmin === null) ? <Loading /> : (
         <Routes>
           <Route path="/" element={<Home session={session} />} />
           <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <Login />} />
@@ -59,6 +59,7 @@ export default function App() {
           <Route path="/admin/:id" element={isAdmin ? <AdminReview /> : <Navigate to="/dashboard" replace />} />
           <Route path="/request/:id" element={guard(<RequestDetail />)} />
           <Route path="/t/:token" element={<Tenant />} />
+          <Route path="/hr/:token" element={<HrVerify />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       )}

@@ -1,3 +1,4 @@
+import { Icon } from '../Icon.jsx'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabase.js'
@@ -27,7 +28,7 @@ export default function Admin() {
         <div className="tabs">{TABS.map(([k, t]) => <button key={k} className={`tab ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>{t}</button>)}</div>
         {err && <p className="note err">{err}</p>}
         {rows === null && <Loading />}
-        {rows && show.length === 0 && <div className="empty"><div className="big">📭</div><p>Nothing here.</p></div>}
+        {rows && show.length === 0 && <div className="empty"><Icon name="inbox" size={40} /><p>Nothing here.</p></div>}
         {show.map((r) => {
           const done = (r.checks || []).filter((c) => c.status === 'passed').length
           return (

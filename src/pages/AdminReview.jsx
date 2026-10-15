@@ -1,8 +1,10 @@
+import { StatusIcon } from '../Icon.jsx'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../supabase.js'
 import { Loading } from '../Loading.jsx'
-import { CHECK_ORDER, CHECK_LABEL, DOC_LABEL, STATUS_ICON } from '../lib.js'
+import HrPanel from '../components/HrPanel.jsx'
+import { CHECK_ORDER, CHECK_LABEL, DOC_LABEL } from '../lib.js'
 
 const STATUSES = ['pending', 'passed', 'failed', 'needs_review']
 
@@ -82,12 +84,14 @@ export default function AdminReview() {
         </div>
       </section>
 
+      <HrPanel requestId={id} defaultEmail={sum.hr_email} status={req.status} tenantName={req.tenant_name} claimed={sum} />
+
       <section className="card">
         <h2>Checks</h2>
         {list.length === 0 && <p className="muted">Checks appear after the tenant submits.</p>}
         {list.map((c) => (
           <div className="krow" key={c.id}>
-            <span><b>{STATUS_ICON[edit[c.id]?.status]} {CHECK_LABEL[c.check_type]}</b></span>
+            <span><b><StatusIcon status={edit[c.id]?.status} /> {CHECK_LABEL[c.check_type]}</b></span>
             <span className="actions">
               <select value={edit[c.id]?.status} onChange={(e) => setEdit({ ...edit, [c.id]: { ...edit[c.id], status: e.target.value } })}>
                 {STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}</select>

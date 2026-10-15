@@ -1,3 +1,4 @@
+import { Icon } from '../Icon.jsx'
 import { useState } from 'react'
 import { supabase } from '../supabase.js'
 import { FEE_PAISE, inr, sleep } from '../lib.js'
@@ -38,13 +39,13 @@ export default function PayModal({ request, onClose, onPaid }) {
     <div className="overlay" onClick={stage === 'form' ? onClose : undefined}>
       <div className="modal glass" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         {stage === 'success' ? (
-          <div className="success"><div className="big">✅</div><h3>Payment successful</h3><p className="muted">Verification link is now active for {request.tenant_name}.</p></div>
+          <div className="success"><div className="done-ico"><Icon name="check" size={34} /></div><h3>Payment successful</h3><p className="muted">Verification link is now active for {request.tenant_name}.</p></div>
         ) : stage === 'processing' ? (
           <div className="success"><div className="center"><div className="spin" /></div><h3>Processing payment…</h3><p className="muted">Please don't close this window.</p></div>
         ) : (
           <>
             <div className="bar"><h3 style={{ margin: 0 }}>Pay for verification</h3><button className="btn alt sm" onClick={onClose}>✕</button></div>
-            <div className="note">🧪 <b>Test mode.</b> No real money is charged. A real gateway (UPI / cards) replaces this later.</div>
+            <div className="note"><Icon name="info" /><span><b>Test mode.</b> No real money is charged. A real gateway (UPI / cards) replaces this later.</span></div>
             <div className="amount"><span className="muted">Tenant: {request.tenant_name}</span><b>{inr(FEE_PAISE)}</b></div>
             <div className="tabs">
               {[['upi', 'UPI'], ['card', 'Card'], ['netbanking', 'Net banking']].map(([k, t]) => (

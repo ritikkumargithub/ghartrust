@@ -10,5 +10,4 @@ export const CHECK_HELP = {
   employment: 'Employer and role confirmed', income: 'Salary evidence reviewed', police: 'Registered with local police',
 }
 export const DOC_LABEL = { pan: 'PAN card', id_proof: 'ID proof', selfie: 'Selfie', employment_doc: 'Offer letter / payslip', bank_statement: 'Bank statement' }
-export const STATUS_ICON = { passed: '✅', failed: '❌', needs_review: '🔎', pending: '⏳' }
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

@@ -39,3 +39,9 @@ and optionally `SITE_URL` (your Vercel URL). Without them the button falls back 
       insert into public.admins (user_id) select id from auth.users where email = 'YOUR-EMAIL';
   Then open **Admin panel** from the dashboard to review tenants, open documents, and set each check to passed / failed / needs review.
 - The database is already migrated in your Supabase project; `supabase/schema.sql` is only the original base schema.
+
+## HR employment verification
+After a tenant submits, the landlord (or admin) opens the request and uses **Employment verification by HR** to send a secure link
+(`/hr/<token>`, valid 14 days) to the employer's HR email. HR confirms employment, designation, income, joining date and
+employment type, then signs. The employment and income checks move to "needs review" for the admin to finalise.
+Emails use the `send-hr-email` Edge Function (same Resend secrets as `send-tenant-email`); without them, copy the link or use the email-app button.

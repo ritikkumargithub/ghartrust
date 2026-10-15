@@ -1,9 +1,11 @@
+import { StatusIcon } from '../Icon.jsx'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../supabase.js'
 import { Loading } from '../Loading.jsx'
+import HrPanel from '../components/HrPanel.jsx'
 import PayModal from '../components/PayModal.jsx'
-import { CHECK_ORDER, CHECK_LABEL, CHECK_HELP, DOC_LABEL, STATUS_ICON, FEE_PAISE, inr } from '../lib.js'
+import { CHECK_ORDER, CHECK_LABEL, CHECK_HELP, DOC_LABEL, FEE_PAISE, inr } from '../lib.js'
 
 export default function RequestDetail() {
   const { id } = useParams()
@@ -59,7 +61,7 @@ export default function RequestDetail() {
             const c = byType[k]; const st = c?.status || 'pending'
             return (
               <div className={`tl ${st}`} key={k}>
-                <span className="tl-ico">{STATUS_ICON[st]}</span>
+                <span className="tl-ico"><StatusIcon status={st} /></span>
                 <div><b>{CHECK_LABEL[k]}</b> <span className={`badge ${st}`}>{st.replace('_', ' ')}</span>
                   <div className="muted">{c?.detail || CHECK_HELP[k]}</div></div>
               </div>
@@ -67,6 +69,8 @@ export default function RequestDetail() {
           })}
         </div>
       </section>
+
+      <HrPanel requestId={id} defaultEmail={sum.hr_email} status={req.status} tenantName={req.tenant_name} claimed={sum} />
 
       {sum.employer_name || sum.pan_masked ? (
         <section className="card">

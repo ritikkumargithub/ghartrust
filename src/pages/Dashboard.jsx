@@ -1,3 +1,4 @@
+import { Icon } from '../Icon.jsx'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabase.js'
@@ -88,7 +89,7 @@ export default function Dashboard({ isAdmin }) {
       <section className="card">
         <h2>Your requests</h2>
         {rows === null && <Loading />}
-        {rows && rows.length === 0 && <div className="empty"><div className="big">🏠</div><p>No requests yet. Create your first one above.</p></div>}
+        {rows && rows.length === 0 && <div className="empty"><Icon name="home" size={40} /><p>No requests yet. Create your first one above.</p></div>}
         {rows && rows.map((r) => (
           <div className="req" key={r.id}>
             <div className="who">

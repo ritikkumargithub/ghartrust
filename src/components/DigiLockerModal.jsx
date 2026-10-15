@@ -1,3 +1,4 @@
+import { Icon } from '../Icon.jsx'
 import { useState } from 'react'
 import { sleep } from '../lib.js'
 
@@ -24,7 +25,7 @@ export default function DigiLockerModal({ onClose, onConnected }) {
   return (
     <div className="overlay" onClick={step < 3 && !busy ? onClose : undefined}>
       <div className="modal glass" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        <div className="note">🧪 <b>Demo DigiLocker.</b> This is a simulation, not the real DigiLocker. Real integration comes with a licensed provider.</div>
+        <div className="note"><Icon name="info" /><span><b>Demo DigiLocker.</b> This is a simulation, not the real DigiLocker. Real integration comes with a licensed provider.</span></div>
         {step === 0 && (
           <>
             <h3>Sign in to DigiLocker</h3>
@@ -55,7 +56,7 @@ export default function DigiLockerModal({ onClose, onConnected }) {
             <div className="actions"><button className="btn alt" onClick={onClose} disabled={busy}>Deny</button><button className="btn" onClick={allow} disabled={busy}>{busy ? 'Connecting…' : 'Allow'}</button></div>
           </>
         )}
-        {step === 3 && <div className="success"><div className="big">🔗</div><h3>DigiLocker connected</h3><p className="muted">Identity details received.</p></div>}
+        {step === 3 && <div className="success"><div className="done-ico"><Icon name="link" size={30} /></div><h3>DigiLocker connected</h3><p className="muted">Identity details received.</p></div>}
       </div>
     </div>
   )
