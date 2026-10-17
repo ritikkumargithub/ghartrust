@@ -4,14 +4,19 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../supabase.js'
 import { Loading } from '../Loading.jsx'
 import HrPanel from '../components/HrPanel.jsx'
+import { emailTenantAfterPayment } from '../mail.js'
+import AgreementPanel from '../components/AgreementPanel.jsx'
 import PayModal from '../components/PayModal.jsx'
-import { CHECK_ORDER, CHECK_LABEL, CHECK_HELP, DOC_LABEL, FEE_PAISE, inr } from '../lib.js'
+import { CHECK_ORDER, CHECK_LABEL, CHECK_HELP, DOC_LABEL, inr } from '../lib.js'
+import { usePlans } from '../plans.js'
 
 export default function RequestDetail() {
   const { id } = useParams()
   const [d, setD] = useState(null)
   const [err, setErr] = useState('')
   const [pay, setPay] = useState(false)
+  const [mail, setMail] = useState('')
+  const plans = usePlans()
 
   const load = async () => {
     const [r, c, docs, ch, pm, sm] = await Promise.all([
@@ -32,8 +37,13 @@ export default function RequestDetail() {
   useEffect(() => { load() }, [id])
 
   if (err) return <p className="center err">{err}</p>
-  if (!d) return <Loading />
+  if (!d || !plans) return <Loading />
   const { req, consent, docs, checks, payment, sum } = d
+  const plan = plans.find((p) => p.id === req.plan)
+  const planChecks = plan?.checks || CHECK_ORDER
+  const shown = CHECK_ORDER.filter((k) => planChecks.includes(k))
+  const hasEmp = planChecks.includes('employment')
+  const hasPolice = planChecks.includes('police')
   const byType = Object.fromEntries(checks.map((c) => [c.check_type, c]))
   const passed = checks.filter((c) => c.status === 'passed').length
 
@@ -45,19 +55,21 @@ export default function RequestDetail() {
       <section className="card">
         <h2>{req.tenant_name} <span className={`badge ${req.status}`}>{req.status.replace('_', ' ')}</span></h2>
         <p className="muted">{req.property_label || '—'} · {req.tenant_phone}{req.tenant_email ? ` · ${req.tenant_email}` : ''}</p>
+        <p><span className="badge">{plan?.name} package</span> <span className="muted">{inr(plan?.price_paise || 0)}</span></p>
         <p>{consent ? `Consent signed by "${consent.signed_name}" on ${new Date(consent.signed_at).toLocaleString()}` : 'Tenant has not given consent yet.'}</p>
         <div className="krow noprint">
           <span>Payment: {payment ? <span className="badge passed">Paid {inr(payment.amount_paise)} · {payment.reference}</span> : <span className="badge failed">Unpaid</span>}</span>
-          {!payment && <button className="btn sm" onClick={() => setPay(true)}>Pay {inr(FEE_PAISE)}</button>}
+          {!payment && <button className="btn sm" onClick={() => setPay(true)}>Pay {inr(plan?.price_paise || 0)}</button>}
         </div>
+        {mail && <p className="note">{mail}</p>}
       </section>
 
       <section className="card">
         <h2>Verification progress</h2>
-        <p className="muted">{checks.length ? `${passed} of ${CHECK_ORDER.length} checks passed` : 'Checks start after the tenant submits.'}</p>
+        <p className="muted">{checks.length ? `${passed} of ${shown.length} checks passed` : 'Checks start after the tenant submits.'}</p>
         <div className="progress"><i style={{ width: `${(passed / CHECK_ORDER.length) * 100}%` }} /></div>
         <div className="timeline">
-          {CHECK_ORDER.map((k) => {
+          {shown.map((k) => {
             const c = byType[k]; const st = c?.status || 'pending'
             return (
               <div className={`tl ${st}`} key={k}>
@@ -70,9 +82,9 @@ export default function RequestDetail() {
         </div>
       </section>
 
-      <HrPanel requestId={id} defaultEmail={sum.hr_email} status={req.status} tenantName={req.tenant_name} claimed={sum} />
+      {hasEmp && <HrPanel requestId={id} defaultEmail={sum.hr_email} status={req.status} tenantName={req.tenant_name} claimed={sum} />}
 
-      {sum.employer_name || sum.pan_masked ? (
+      {sum.pan_masked || sum.employer_name ? (
         <section className="card">
           <h2>Details provided by tenant</h2>
           <div className="facts">
@@ -80,14 +92,16 @@ export default function RequestDetail() {
             <div><span>Name on PAN</span><b>{sum.pan_name || '—'}</b></div>
             <div><span>Aadhaar</span><b>{sum.aadhaar_masked || '—'}</b></div>
             <div><span>DigiLocker</span><b>{sum.digilocker_status === 'connected' ? 'Connected' : 'Not connected'}</b></div>
-            <div><span>Employer</span><b>{sum.employer_name || '—'}</b></div>
-            <div><span>Designation</span><b>{sum.designation || '—'}</b></div>
-            <div><span>Monthly income</span><b>{sum.monthly_income ? '₹' + Number(sum.monthly_income).toLocaleString('en-IN') : '—'}</b></div>
-            <div><span>Police verification city</span><b>{sum.police_city || '—'}</b></div>
+            {hasEmp && <div><span>Employer</span><b>{sum.employer_name || '—'}</b></div>}
+            {hasEmp && <div><span>Designation</span><b>{sum.designation || '—'}</b></div>}
+            {hasEmp && <div><span>Monthly income</span><b>{sum.monthly_income ? '₹' + Number(sum.monthly_income).toLocaleString('en-IN') : '—'}</b></div>}
+            {hasPolice && <div><span>Police verification city</span><b>{sum.police_city || '—'}</b></div>}
           </div>
           <p className="muted">PAN and Aadhaar numbers are partly hidden for your safety.</p>
         </section>
       ) : null}
+
+      <AgreementPanel request={req} />
 
       <section className="card noprint">
         <h2>Documents</h2>
@@ -97,7 +111,7 @@ export default function RequestDetail() {
             {x.url ? <a href={x.url} target="_blank" rel="noreferrer">Open (5 min link)</a> : <span className="muted">unavailable</span>}</div>
         ))}
       </section>
-      {pay && <PayModal request={req} onClose={() => setPay(false)} onPaid={() => { setPay(false); load() }} />}
+      {pay && <PayModal request={req} amountPaise={plan?.price_paise || 0} onClose={() => setPay(false)} onPaid={async () => { setPay(false); load(); setMail(await emailTenantAfterPayment(req)) }} />}
     </main>
   )
 }

@@ -25,11 +25,11 @@ export default function DigiLockerModal({ onClose, onConnected }) {
   return (
     <div className="overlay" onClick={step < 3 && !busy ? onClose : undefined}>
       <div className="modal glass" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        <div className="note"><Icon name="info" /><span><b>Demo DigiLocker.</b> This is a simulation, not the real DigiLocker. Real integration comes with a licensed provider.</span></div>
+        <div className="note"><Icon name="info" /><span>Your identity details are used only to verify your tenancy application. Final verification is completed by our team.</span></div>
         {step === 0 && (
           <>
             <h3>Sign in to DigiLocker</h3>
-            <p className="muted">We'll send an OTP to your Aadhaar-linked mobile.</p>
+            <p className="muted">Confirm your Aadhaar details to continue.</p>
             <label>Last 4 digits of Aadhaar<input inputMode="numeric" maxLength={4} placeholder="1234" value={a4} onChange={(e) => setA4(e.target.value.replace(/\D/g, ''))} /></label>
             <p className="muted">We never ask for or store your full Aadhaar number.</p>
             {err && <p className="note err">{err}</p>}
@@ -39,7 +39,7 @@ export default function DigiLockerModal({ onClose, onConnected }) {
         {step === 1 && (
           <>
             <h3>Enter OTP</h3>
-            <p className="muted">Demo: enter any 6 digits.</p>
+            <p className="muted">Enter the 6-digit code to continue.</p>
             <label>6-digit OTP<input inputMode="numeric" maxLength={6} placeholder="••••••" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} /></label>
             {err && <p className="note err">{err}</p>}
             <button className="btn" style={{ width: '100%' }} disabled={busy} onClick={verifyOtp}>{busy ? 'Verifying…' : 'Verify OTP'}</button>

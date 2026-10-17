@@ -1,4 +1,3 @@
-export const FEE_PAISE = 29900
 export const inr = (paise) => '₹' + (paise / 100).toLocaleString('en-IN')
 export const CHECK_ORDER = ['pan', 'identity', 'face_match', 'employment', 'income', 'police']
 export const CHECK_LABEL = {

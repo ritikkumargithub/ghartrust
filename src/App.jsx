@@ -36,17 +36,19 @@ function Home({ session }) {
 
 export default function App() {
   const [session, setSession] = useState(undefined)
-  const [isAdmin, setIsAdmin] = useState(null)
+  const [adminFor, setAdminFor] = useState({ id: null, val: false })
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
+  const uid = session?.user?.id
   useEffect(() => {
-    if (!session) return setIsAdmin(false)
-    setIsAdmin(null)
-    supabase.rpc('is_admin').then(({ data }) => setIsAdmin(data === true))
-  }, [session?.user?.id])
+    if (!uid) return
+    supabase.rpc('is_admin').then(({ data }) => setAdminFor({ id: uid, val: data === true }))
+  }, [uid])
+  // null = still checking (prevents redirecting /admin away before the check finishes)
+  const isAdmin = !session ? false : adminFor.id === uid ? adminFor.val : null
   const guard = (el) => (session ? el : <Navigate to="/login" replace />)
   return (
     <>

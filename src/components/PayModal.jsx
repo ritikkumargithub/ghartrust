@@ -1,11 +1,11 @@
 import { Icon } from '../Icon.jsx'
 import { useState } from 'react'
 import { supabase } from '../supabase.js'
-import { FEE_PAISE, inr, sleep } from '../lib.js'
+import { inr, sleep } from '../lib.js'
 
 const BANKS = ['State Bank of India', 'HDFC Bank', 'ICICI Bank', 'Axis Bank', 'Kotak Mahindra Bank']
 
-export default function PayModal({ request, onClose, onPaid }) {
+export default function PayModal({ request, amountPaise, onClose, onPaid }) {
   const [method, setMethod] = useState('upi')
   const [upi, setUpi] = useState('')
   const [card, setCard] = useState({ number: '', exp: '', cvv: '' })
@@ -46,7 +46,7 @@ export default function PayModal({ request, onClose, onPaid }) {
           <>
             <div className="bar"><h3 style={{ margin: 0 }}>Pay for verification</h3><button className="btn alt sm" onClick={onClose}>✕</button></div>
             <div className="note"><Icon name="info" /><span><b>Test mode.</b> No real money is charged. A real gateway (UPI / cards) replaces this later.</span></div>
-            <div className="amount"><span className="muted">Tenant: {request.tenant_name}</span><b>{inr(FEE_PAISE)}</b></div>
+            <div className="amount"><span className="muted">Tenant: {request.tenant_name}</span><b>{inr(amountPaise)}</b></div>
             <div className="tabs">
               {[['upi', 'UPI'], ['card', 'Card'], ['netbanking', 'Net banking']].map(([k, t]) => (
                 <button key={k} className={`tab ${method === k ? 'on' : ''}`} onClick={() => { setMethod(k); setErr('') }}>{t}</button>
@@ -57,7 +57,7 @@ export default function PayModal({ request, onClose, onPaid }) {
               <>
                 <label>Card number<input inputMode="numeric" placeholder="4242 4242 4242 4242" maxLength={19} value={card.number}
                   onChange={(e) => setCard({ ...card, number: e.target.value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim() })} /></label>
-                <div className="two">
+                <div className="two keep2">
                   <label>Expiry<input placeholder="MM/YY" maxLength={5} value={card.exp} onChange={(e) => setCard({ ...card, exp: e.target.value })} /></label>
                   <label>CVV<input inputMode="numeric" placeholder="123" maxLength={3} type="password" value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, '') })} /></label>
                 </div>
@@ -69,7 +69,7 @@ export default function PayModal({ request, onClose, onPaid }) {
               </label>
             )}
             {err && <p className="note err">{err}</p>}
-            <button className="btn" style={{ width: '100%' }} onClick={pay}>Pay {inr(FEE_PAISE)}</button>
+            <button className="btn" style={{ width: '100%' }} onClick={pay}>Pay {inr(amountPaise)}</button>
           </>
         )}
       </div>

@@ -33,7 +33,7 @@ export default function Admin() {
           const done = (r.checks || []).filter((c) => c.status === 'passed').length
           return (
             <Link to={`/admin/${r.id}`} className="req" key={r.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div><b>{r.tenant_name}</b> <span className={`badge ${r.status}`}>{r.status.replace('_', ' ')}</span> {paid(r) ? <span className="badge passed">Paid</span> : <span className="badge failed">Unpaid</span>}
+              <div><b>{r.tenant_name}</b> <span className={`badge ${r.status}`}>{r.status.replace('_', ' ')}</span> <span className="badge">{r.plan}</span> {paid(r) ? <span className="badge passed">Paid</span> : <span className="badge failed">Unpaid</span>}
                 <div className="muted">{r.property_label || '—'} · {r.tenant_phone} · {new Date(r.created_at).toLocaleDateString()}</div></div>
               <span className="muted">{(r.checks || []).length ? `${done}/${r.checks.length} checks passed` : 'no checks yet'} →</span>
             </Link>

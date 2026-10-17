@@ -4,7 +4,9 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../supabase.js'
 import { Loading } from '../Loading.jsx'
 import PayModal from '../components/PayModal.jsx'
-import { FEE_PAISE, inr } from '../lib.js'
+import { inr, CHECK_ORDER, CHECK_LABEL } from '../lib.js'
+import { usePlans } from '../plans.js'
+import { emailTenantAfterPayment } from '../mail.js'
 
 const empty = { tenant_name: '', tenant_phone: '', tenant_email: '', property_label: '' }
 const linkFor = (t) => `${location.origin}/t/${t}`
@@ -28,9 +30,13 @@ export default function Dashboard({ isAdmin }) {
   const [busy, setBusy] = useState(false)
   const [sending, setSending] = useState('')
   const [payFor, setPayFor] = useState(null)
+  const [plan, setPlan] = useState('')
+  const plans = usePlans()
+  const planOf = (id) => (plans || []).find((p) => p.id === id)
+  const priceOf = (id) => planOf(id)?.price_paise ?? 0
 
   const load = async () => {
-    const { data, error } = await supabase.from('verification_requests').select('*, payments(status)').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('verification_requests').select('*, payments(status), agreements(landlord_signed_at, tenant_signed_at)').order('created_at', { ascending: false })
     if (error) { setErr(error.message); setRows([]) } else setRows(data)
   }
   useEffect(() => { load() }, [])
@@ -38,10 +44,10 @@ export default function Dashboard({ isAdmin }) {
   const create = async (e) => {
     e.preventDefault(); setBusy(true); setErr(''); setMsg('')
     const payload = { ...f, tenant_email: f.tenant_email.trim() || null }
-    const { error } = await supabase.from('verification_requests').insert(payload)
+    const { error } = await supabase.from('verification_requests').insert({ ...payload, plan })
     setBusy(false)
     if (error) return setErr(error.message)
-    setF(empty); setMsg('Request created. Send the link to your tenant below.'); load()
+    setF(empty); setPlan(''); setMsg('Request created. Pay to activate the link, then open the request to prepare the rental agreement.'); load()
   }
 
   const sendEmail = async (r) => {
@@ -54,6 +60,7 @@ export default function Dashboard({ isAdmin }) {
   }
 
   const copy = async (r) => { await navigator.clipboard.writeText(linkFor(r.token)); setMsg('Link copied') }
+  const ag = (r) => (Array.isArray(r.agreements) ? r.agreements[0] : r.agreements)
   const paid = (r) => (r.payments || []).some((p) => p.status === 'paid')
   const count = (fn) => (rows || []).filter(fn).length
 
@@ -80,8 +87,22 @@ export default function Dashboard({ isAdmin }) {
           <label>Tenant mobile<input required inputMode="tel" value={f.tenant_phone} onChange={(e) => setF({ ...f, tenant_phone: e.target.value })} /></label>
           <label>Tenant email (optional)<input type="email" value={f.tenant_email} onChange={(e) => setF({ ...f, tenant_email: e.target.value })} /></label>
           <label>Property (optional)<input value={f.property_label} onChange={(e) => setF({ ...f, property_label: e.target.value })} /></label>
-          <button className="btn" disabled={busy}>{busy ? 'Creating…' : 'Create request'}</button>
+          <h3 className="plans-title">Choose a verification package</h3>
+          <div className="plans" role="radiogroup" aria-label="Verification package">
+            {plans === null && <Loading />}
+            {(plans || []).filter((p) => p.active).map((p) => (
+              <button type="button" role="radio" aria-checked={plan === p.id} key={p.id} className={`plan ${plan === p.id ? 'on' : ''}`} onClick={() => setPlan(p.id)}>
+                {p.id === 'standard' && <span className="ribbon">Most popular</span>}
+                <b className="pname">{p.name}</b>
+                <span className="pdesc">{p.description}</span>
+                <span className="price">{inr(p.price_paise)}<small> per tenant</small></span>
+                <ul>{CHECK_ORDER.map((k) => <li key={k} className={p.checks.includes(k) ? 'yes' : 'no'}>{CHECK_LABEL[k]}</li>)}</ul>
+              </button>
+            ))}
+          </div>
+          <button className="btn" disabled={busy || !plan}>{busy ? 'Creating…' : plan ? `Create request · ${inr(priceOf(plan))}` : 'Choose a package to continue'}</button>
         </form>
+        <p className="muted">Add the tenant's email and we email them the verification link automatically right after payment.</p>
         {err && <p className="note err">{err}</p>}
         {msg && <p className="note">{msg}</p>}
       </section>
@@ -95,12 +116,12 @@ export default function Dashboard({ isAdmin }) {
             <div className="who">
               <div className="avatar">{initials(r.tenant_name)}</div>
               <div style={{ minWidth: 0 }}>
-                <b>{r.tenant_name}</b> <span className={`badge ${r.status}`}>{r.status.replace('_', ' ')}</span> {paid(r) ? <span className="badge passed">Paid</span> : <span className="badge failed">Unpaid</span>}
+                <b>{r.tenant_name}</b> <span className={`badge ${r.status}`}>{r.status.replace('_', ' ')}</span> <span className="badge">{planOf(r.plan)?.name}</span> {ag(r)?.tenant_signed_at ? <span className="badge passed">Agreement signed</span> : ag(r)?.landlord_signed_at ? <span className="badge needs_review">Agreement sent</span> : <span className="badge pending">Agreement pending</span>} {paid(r) ? <span className="badge passed">Paid</span> : <span className="badge failed">Unpaid</span>}
                 <div className="muted">{r.property_label || '—'} · {r.tenant_phone}{r.tenant_email ? ` · ${r.tenant_email}` : ''}</div>
               </div>
             </div>
             <div className="actions">
-              {!paid(r) && <button className="btn sm" onClick={() => setPayFor(r)}>Pay {inr(FEE_PAISE)}</button>}
+              {!paid(r) && <button className="btn sm" onClick={() => setPayFor(r)}>Pay {inr(priceOf(r.plan))}</button>}
               {paid(r) && <a className="btn alt sm" href={waLink(r)} target="_blank" rel="noreferrer">WhatsApp</a>}
               {paid(r) && r.tenant_email && <button className="btn alt sm" disabled={sending === r.id} onClick={() => sendEmail(r)}>{sending === r.id ? 'Sending…' : 'Email'}</button>}
               {paid(r) && <button className="btn alt sm" onClick={() => copy(r)}>Copy link</button>}
@@ -109,7 +130,7 @@ export default function Dashboard({ isAdmin }) {
           </div>
         ))}
       </section>
-      {payFor && <PayModal request={payFor} onClose={() => setPayFor(null)} onPaid={() => { setPayFor(null); setMsg('Payment done. You can now send the link to your tenant.'); load() }} />}
+      {payFor && <PayModal request={payFor} amountPaise={priceOf(payFor.plan)} onClose={() => setPayFor(null)} onPaid={async () => { const r = payFor; setPayFor(null); load(); setMsg(await emailTenantAfterPayment(r)) }} />}
     </main>
   )
 }

@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../supabase.js'
 import { Loading } from '../Loading.jsx'
+import AgreementPanel from '../components/AgreementPanel.jsx'
 import HrPanel from '../components/HrPanel.jsx'
+import { usePlans } from '../plans.js'
 import { CHECK_ORDER, CHECK_LABEL, DOC_LABEL } from '../lib.js'
 
 const STATUSES = ['pending', 'passed', 'failed', 'needs_review']
@@ -14,6 +16,7 @@ export default function AdminReview() {
   const [edit, setEdit] = useState({})
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
+  const plans = usePlans()
 
   const load = async () => {
     const [r, docs, ch, sm] = await Promise.all([
@@ -55,6 +58,7 @@ export default function AdminReview() {
   if (err && !d) return <p className="center err">{err}</p>
   if (!d) return <Loading />
   const { req, docs, checks, sum } = d
+  const plan = (plans || []).find((p) => p.id === req.plan)
   const list = CHECK_ORDER.map((k) => checks[k]).filter(Boolean)
 
   return (
@@ -65,8 +69,9 @@ export default function AdminReview() {
       <section className="card">
         <h2>{req.tenant_name} <span className={`badge ${req.status}`}>{req.status.replace('_', ' ')}</span></h2>
         <p className="muted">{req.property_label || '—'} · {req.tenant_phone}{req.tenant_email ? ` · ${req.tenant_email}` : ''}</p>
+        <p><span className="badge">{plan?.name || req.plan} package</span></p>
         <div className="actions">
-          <button className="btn sm" disabled={!list.length} onClick={passAll}>Mark all checks passed (demo)</button>
+          <button className="btn sm" disabled={!list.length} onClick={passAll}>Mark all checks passed</button>
           <button className="btn alt sm" disabled={req.status !== 'submitted'} onClick={markReviewed}>Mark request reviewed</button>
         </div>
         {msg && <p className="note">{msg}</p>}{err && <p className="note err">{err}</p>}
@@ -84,7 +89,7 @@ export default function AdminReview() {
         </div>
       </section>
 
-      <HrPanel requestId={id} defaultEmail={sum.hr_email} status={req.status} tenantName={req.tenant_name} claimed={sum} />
+      {plan?.checks.includes('employment') && <HrPanel requestId={id} defaultEmail={sum.hr_email} status={req.status} tenantName={req.tenant_name} claimed={sum} />}
 
       <section className="card">
         <h2>Checks</h2>
@@ -101,6 +106,8 @@ export default function AdminReview() {
           </div>
         ))}
       </section>
+
+      <AgreementPanel request={req} readOnly />
 
       <section className="card">
         <h2>Documents</h2>
